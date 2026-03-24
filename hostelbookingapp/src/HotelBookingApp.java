@@ -1,47 +1,53 @@
 import java.util.*;
 
-// Service class
-class Service {
-    String name;
-    double cost;
-
-    public Service(String name, double cost) {
-        this.name = name;
-        this.cost = cost;
+// Custom Exception
+class InvalidBookingException extends Exception {
+    public InvalidBookingException(String message) {
+        super(message);
     }
 }
 
 public class HotelBookingApp {
 
-    // Map: Reservation ID -> List of Services
-    private HashMap<String, List<Service>> serviceMap;
+    private HashMap<String, Integer> inventory;
 
     // Constructor
     public HotelBookingApp() {
-        serviceMap = new HashMap<>();
+        inventory = new HashMap<>();
     }
 
-    // Add service
-    public void addService(String reservationId, String serviceName, double cost) {
-        serviceMap.putIfAbsent(reservationId, new ArrayList<>());
-        serviceMap.get(reservationId).add(new Service(serviceName, cost));
+    // Add room type
+    public void addRoomType(String type, int count) {
+        inventory.put(type, count);
     }
 
-    // Display total cost only
-    public void displayTotalCost(String reservationId) {
-        System.out.println("Add-On Service Selection");
-        System.out.println("Reservation ID: " + reservationId);
+    // Validate booking
+    public void validateBooking(String roomType) throws InvalidBookingException {
 
-        double total = 0;
-        List<Service> services = serviceMap.get(reservationId);
-
-        if (services != null) {
-            for (Service s : services) {
-                total += s.cost;
-            }
+        // Check if room type exists
+        if (!inventory.containsKey(roomType)) {
+            throw new InvalidBookingException("Invalid room type: " + roomType);
         }
 
-        System.out.println("Total Add-On Cost: " + total);
+        // Check availability
+        if (inventory.get(roomType) <= 0) {
+            throw new InvalidBookingException("No rooms available for: " + roomType);
+        }
+    }
+
+    // Process booking safely
+    public void bookRoom(String guestName, String roomType) {
+        try {
+            validateBooking(roomType);
+
+            // Update inventory only if valid
+            inventory.put(roomType, inventory.get(roomType) - 1);
+
+            System.out.println("Booking successful for " + guestName + " (" + roomType + ")");
+
+        } catch (InvalidBookingException e) {
+            System.out.println("Booking failed: " + e.getMessage());
+        }
     }
 
     // Main method
@@ -49,14 +55,17 @@ public class HotelBookingApp {
 
         HotelBookingApp app = new HotelBookingApp();
 
-        // Given reservation
-        String reservationId = "Single-1";
+        // Setup inventory
+        app.addRoomType("Single", 1);
+        app.addRoomType("Double", 0);
 
-        // Add services (sum = 1500.0)
-        app.addService(reservationId, "Breakfast", 500);
-        app.addService(reservationId, "Spa", 1000);
+        // Valid booking
+        app.bookRoom("Abhi", "Single");
 
-        // Display result
-        app.displayTotalCost(reservationId);
+        // Invalid: no availability
+        app.bookRoom("Subha", "Double");
+
+        // Invalid: wrong type
+        app.bookRoom("Vanmathi", "Suite");
     }
 }
